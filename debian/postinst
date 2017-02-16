@@ -1,0 +1,6 @@
+service pirate-server stop || true
+sleep 1
+service pirate-server start || true
+systemctl daemon-reload
+systemctl enable pirate-server.service || true
+deb-systemd-invoke restart pirate-server || true

@@ -1,0 +1,10 @@
+[Unit]
+Description=UDP server for client-side real-time metrics
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/pirate-server
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

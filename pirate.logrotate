@@ -1,0 +1,10 @@
+/var/log/pirate.log
+{
+    rotate 5
+    size 20M
+    missingok
+    compress
+    postrotate
+        /usr/bin/killall -USR1 pirate-server
+    endscript
+}

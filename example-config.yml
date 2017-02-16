@@ -1,0 +1,21 @@
+udp_address: 127.0.0.1:33333
+graphite_target: file:///tmp/grafsy/pirate.log
+gzip: true
+log_level: info
+projects:
+  foe_mobile:
+    graphite_path: AVG.games.foe.client.{attr.market}.{attr.platform}.{attr.version}.{metric.name}
+    attributes:
+      market: ^(none|[a-z]{2})$
+      platform: ^(ios|and(_(google|amazon|samsung))?)$
+      version: ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))?$
+    metrics:
+      fps:
+        min: 0
+        max: 70
+      memory_usage:
+        min: 0
+        max: 2147483648
+      startup_time:
+        min: 0
+        max: 120

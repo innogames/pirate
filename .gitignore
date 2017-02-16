@@ -1,0 +1,4 @@
+/.idea/
+/bin/
+!/bin/.gitkeep
+/config.yml

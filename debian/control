@@ -1,0 +1,6 @@
+Package: pirate
+Version: PACKAGEVER
+Architecture: amd64
+Maintainer: Norman Soetbeer <norman.soetbeer@innogames.com>
+Vcs-Git: https://gitlab.innogames.de/foe-tools/pirate.git
+Description: UDP server for client-side real-time metrics
