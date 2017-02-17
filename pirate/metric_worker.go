@@ -29,11 +29,16 @@ func (w *metricWorker) Run(concurrency int) {
 }
 
 func (w *metricWorker) run(wg sync.WaitGroup) {
+	var projectCfg *ProjectConfig
+	var metricCfg *MetricConfig
+
 	for msg := range w.chMsg {
-		tpl := w.cfg.Projects[string(msg.Header["project"])].GraphiteTemplate
+		projectCfg = w.cfg.Projects[string(msg.Header["project"])]
 
 		for _, metric := range msg.Metrics {
-			path, err := tpl.Resolve(NewCtx(msg.Header, metric))
+			metricCfg = projectCfg.Metrics[string(metric.Name)]
+
+			path, err := metricCfg.GraphiteTemplate.Resolve(NewCtx(msg.Header, metric))
 			if err != nil {
 				w.logger.Errorf("[MetricResolver] %s", err)
 				continue

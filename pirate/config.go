@@ -27,8 +27,10 @@ type ProjectConfig struct {
 }
 
 type MetricConfig struct {
-	Min float64 `yaml:"min"`
-	Max float64 `yaml:"max"`
+	GraphitePattern  string        `yaml:"graphite_path"`
+	GraphiteTemplate *pathTemplate `yaml:"-"`
+	Min              float64       `yaml:"min"`
+	Max              float64       `yaml:"max"`
 }
 
 func LoadConfig(filename string) (*Config, error) {
@@ -56,6 +58,20 @@ func LoadConfig(filename string) (*Config, error) {
 				return nil, fmt.Errorf(`Invalid regexp for "projects.%s.attributes.%s": %s`, pid, aid, err)
 			}
 		}
+
+		// initialize graphite path templates for metrics
+		for mid, metric := range project.Metrics {
+			// use same template from project, if not overridden
+			if metric.GraphitePattern == "" {
+				metric.GraphitePattern = project.GraphitePattern
+				metric.GraphiteTemplate = project.GraphiteTemplate
+			} else {
+				// compile custom template for metric
+				if metric.GraphiteTemplate, err = ParsePathTemplate([]byte(metric.GraphitePattern)); err != nil {
+					return nil, fmt.Errorf(`Invalid path for "projects.%s.%s.graphite_path": %s`, pid, mid, err)
+				}
+			}
+		}
 	}
 
 	// initialize log level
@@ -76,10 +92,10 @@ func (cfg *Config) Log(logger *logging.Logger) {
 	logger.Debugf("[Config] Projects:")
 
 	for pid, project := range cfg.Projects {
-		logger.Debugf("[Config]   - %s (%s)", pid, project.GraphitePattern)
+		logger.Debugf("[Config]   - %s", pid)
 
 		for mid, metric := range project.Metrics {
-			logger.Debugf("[Config]     - %s [min=%.0f max=%.0f]", mid, metric.Min, metric.Max)
+			logger.Debugf("[Config]     - %s [min=%.0f max=%.0f path=%s]", mid, metric.Min, metric.Max, metric.GraphitePattern)
 		}
 	}
 }
