@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	UdpBufferSize = 64 * 1024 * 1024
+	UdpBufferSize = 64 * 1024
 )
 
 type UdpServer struct {
