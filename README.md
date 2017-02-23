@@ -65,7 +65,7 @@ All metrics which passed this validation will be processed and sent to Grafsy
 | Key               | Description                                              |
 |-------------------|----------------------------------------------------------|
 | `udp_address`     | The address to listen for UDP packages                   |
-| `graphite_target` | The target, where the graphite data should be sent to, e.g. `udp://localhost:3002` or `file:///tmp/metrics.log` |
+| `graphite_target` | The target, where the graphite data should be sent to, e.g. `tcp://localhost:3002` or `file:///tmp/metrics.log` |
 | `log_level`       | The log level (debug, info, notice, warning, error, critical) |
 
 ### Projects
