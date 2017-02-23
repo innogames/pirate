@@ -97,7 +97,7 @@ projects:
 Sending the following message
 ```
 project=example_project; platform=ios; version=1.3.37;
-fps 1234567890 55
+fps 55 1234567890
 ```
 
 would result in the path `games.awesome_game.client.ios.1_3_37.fps`
