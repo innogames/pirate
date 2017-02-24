@@ -1,5 +1,7 @@
 udp_address: 0.0.0.0:33333
 graphite_target: tcp://127.0.0.1:3002
+monitoring_enabled: true
+monitoring_path: servers.pirate_foe.software.pirate.{metric.name}
 gzip: true
 log_level: info
 projects:

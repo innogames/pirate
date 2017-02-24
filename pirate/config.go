@@ -10,12 +10,15 @@ import (
 )
 
 type Config struct {
-	UdpAddress     string        `yaml:"udp_address"`
-	GraphiteTarget string        `yaml:"graphite_target"`
-	Gzip           bool          `yaml:"gzip"`
-	LogLevelStr    string        `yaml:"log_level"`
-	LogLevel       logging.Level `yaml:"-"`
-	Projects       map[string]*ProjectConfig
+	UdpAddress         string        `yaml:"udp_address"`
+	GraphiteTarget     string        `yaml:"graphite_target"`
+	Gzip               bool          `yaml:"gzip"`
+	LogLevelStr        string        `yaml:"log_level"`
+	LogLevel           logging.Level `yaml:"-"`
+	MonitoringEnabled  bool          `yaml:"monitoring_enabled"`
+	MonitoringPattern  string        `yaml:"monitoring_path"`
+	MonitoringTemplate *pathTemplate `yaml:"-"`
+	Projects           map[string]*ProjectConfig
 }
 
 type ProjectConfig struct {
@@ -42,6 +45,13 @@ func LoadConfig(filename string) (*Config, error) {
 	cfg := &Config{}
 	if err := yaml.Unmarshal(content, cfg); err != nil {
 		return nil, fmt.Errorf("Failed to parse configuration file: %s", err)
+	}
+
+	// initialize monitoring template
+	if cfg.MonitoringEnabled {
+		if cfg.MonitoringTemplate, err = ParsePathTemplate([]byte(cfg.MonitoringPattern)); err != nil {
+			return nil, fmt.Errorf(`Invalid path for "monitoring_path": %s`, err)
+		}
 	}
 
 	// initialize regexps and templates
