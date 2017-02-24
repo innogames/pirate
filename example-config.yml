@@ -1,5 +1,5 @@
-udp_address: 127.0.0.1:33333
-graphite_target: file:///tmp/grafsy/pirate.log
+udp_address: 0.0.0.0:33333
+graphite_target: tcp://127.0.0.1:3002
 gzip: true
 log_level: info
 projects:
