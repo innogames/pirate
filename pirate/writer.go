@@ -106,10 +106,10 @@ func (w *wrappedWriter) WriteRaw(path []byte, value []byte, timestamp []byte) er
 		if err = w.reopen(); err != nil {
 			return err
 		}
-	}
 
-	if _, err := w.writer.Write(buf); err != nil {
-		return fmt.Errorf("[Metric Writer] Failed to write metric: %s", err)
+		if _, err := w.writer.Write(buf); err != nil {
+			return fmt.Errorf("[Metric Writer] Failed to write metric: %s", err)
+		}
 	}
 
 	return nil
