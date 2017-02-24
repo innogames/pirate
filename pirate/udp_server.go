@@ -32,8 +32,8 @@ func (s *UdpServer) Run() error {
 	}
 	defer conn.Close()
 
+	buf := make([]byte, UdpBufferSize)
 	for {
-		buf := make([]byte, UdpBufferSize)
 		n, _, err := conn.ReadFromUDP(buf)
 		if err != nil {
 			s.logger.Infof("[UDP] Failed to read packet: %s", err)
@@ -41,6 +41,10 @@ func (s *UdpServer) Run() error {
 		}
 
 		s.logger.Debugf("[UDP] Received %d bytes", n)
-		s.chUdp <- buf[:n]
+
+		packet := make([]byte, n)
+		copy(packet, buf)
+
+		s.chUdp <- packet
 	}
 }
