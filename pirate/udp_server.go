@@ -45,6 +45,10 @@ func (s *UdpServer) Run() error {
 		packet := make([]byte, n)
 		copy(packet, buf)
 
-		s.chUdp <- packet
+		select {
+		case s.chUdp <- packet:
+		default:
+			s.logger.Debug("[UDP] Buffer is full, packet got dropped")
+		}
 	}
 }
