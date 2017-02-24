@@ -51,7 +51,7 @@ func main() {
 		}
 
 		// write metrics to buffer
-		buf := bytes.NewBuffer(make([]byte, 0, 1024*1024*1024))
+		buf := bytes.NewBuffer(make([]byte, 0, 1024*1024))
 		buf.Write([]byte(*attr))
 		buf.WriteByte('\n')
 		for _, m := range metrics {
@@ -60,7 +60,7 @@ func main() {
 
 		// compress buffer, if gzip enabled
 		if *compression {
-			gzBuf := bytes.NewBuffer(make([]byte, 0, 64*1024*1024))
+			gzBuf := bytes.NewBuffer(make([]byte, 0, 64*1024))
 			gzWriter := gzip.NewWriter(gzBuf)
 			buf.WriteTo(gzWriter)
 			gzWriter.Flush()
