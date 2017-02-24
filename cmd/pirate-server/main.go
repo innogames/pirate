@@ -6,6 +6,7 @@ import (
 	"github.com/op/go-logging"
 	"gitlab.innogames.de/foe-tools/pirate/pirate"
 	"os"
+	"runtime"
 )
 
 func main() {
@@ -22,8 +23,8 @@ func main() {
 
 	chUdp := make(chan []byte, 100)
 	chUdpDecomp := make(chan []byte, 100)
-	chMsg := make(chan *pirate.Message, 1000)
-	chValidMsg := make(chan *pirate.Message, 1000)
+	chMsg := make(chan *pirate.Message, 100)
+	chValidMsg := make(chan *pirate.Message, 100)
 	chMetric := make(chan *pirate.Metric, 1000)
 
 	server, err := pirate.NewUdpServer(cfg.UdpAddress, logger, chUdp)
@@ -41,11 +42,13 @@ func main() {
 		decompressor = pirate.NewGzipDecompressor()
 	}
 
-	go pirate.NewCompressionWorker(decompressor, logger, chUdp, chUdpDecomp).Run(100)
-	go pirate.NewParserWorker(logger, chUdpDecomp, chMsg).Run(100)
-	go pirate.NewValidatorWorker(cfg, logger, chMsg, chValidMsg).Run(100)
-	go pirate.NewMetricWorker(cfg, logger, chValidMsg, chMetric).Run(100)
-	go pirate.NewWriterWorker(writer, logger, chMetric).Run(10)
+	numCpus := runtime.NumCPU()
+
+	go pirate.NewCompressionWorker(decompressor, logger, chUdp, chUdpDecomp).Run(numCpus)
+	go pirate.NewParserWorker(logger, chUdpDecomp, chMsg).Run(numCpus)
+	go pirate.NewValidatorWorker(cfg, logger, chMsg, chValidMsg).Run(numCpus)
+	go pirate.NewMetricWorker(cfg, logger, chValidMsg, chMetric).Run(numCpus)
+	go pirate.NewWriterWorker(writer, logger, chMetric).Run(1)
 
 	if err := server.Run(); err != nil {
 		fail("UDP Server error: %s", err)
