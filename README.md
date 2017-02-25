@@ -6,10 +6,24 @@ Pirate is a gateway, written in go, which accepts client-side metrics via UDP an
 In the end you can have near-time dashboards with client-side metrics.
 
 
-### Architecture
+## Architecture
 
 ![Pirate Server Architecture](doc/architecture.png)
 
+- UDP packets are accepted by the UDP server
+- if compression is enabled, the packets are decompressed for the next step
+- plain text messages are parsed into header attributes and the metrics body (see [protocol](#protocol))
+- parsed messages are validated, invalid messages or metrics will be dropped (see [validation](#validation))
+- valid metric names are then resolved to their Graphite path
+- at the end the writer will take care of sending the metrics to Grafsy via TCP or filesystem
+- beside this there is a monitoring component, which tracks own metrics like `udp_received`, `metrics_received` or `metrics_dropped`,
+  which are also sent to the writer
+
+All the components of the data pipeline are implemented as workers (goroutines), which scale with the amount of CPUs. Additionally
+there are buffers (go channels) between those components. This means, even if some messages are processed a bit slower,
+the rest of the system should not be affected.
+
+In the rare case that all buffers should be full, incoming UDP packets will be dropped immediately.
 
 
 ## Protocol
@@ -60,6 +74,7 @@ The incoming packages and the single metrics are validated. This includes:
 - all values of custom header fields must match their configured regex, otherwise the message is dropped
 - sent metric names must be configured, otherwise the metric is dropped
 - metric values must be within the configured min/max range to be valid, otherwise the metric is dropped
+- timestamp validation: metrics with future timestamps or too old timestamps (> 1h) get dropped
 
 All metrics which passed this validation will be processed and sent to Grafsy
 
