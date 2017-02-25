@@ -6,9 +6,15 @@ Pirate is a gateway, written in go, which accepts client-side metrics via UDP an
 In the end you can have near-time dashboards with client-side metrics.
 
 
-## UDP Message Format
+### Architecture
 
-The client's message is a GZIP-encoded UDP packet, which consist of two parts: the header and the body.
+![Pirate Server Architecture](doc/architecture.png)
+
+
+
+## Protocol
+
+The client's message is a (GZIP-encoded) UDP packet, which consist of two parts: the header and the body.
 
 The header is the first line of the message and contains information about the whole message (e.g. the project identifier and custom attributes).
 The body contains the metrics, where each metric consists of a name, a numeric value and a timestamp.
@@ -62,24 +68,52 @@ All metrics which passed this validation will be processed and sent to Grafsy
 
 ### General
 
-| Key               | Description                                              |
-|-------------------|----------------------------------------------------------|
-| `udp_address`     | The address to listen for UDP packages                   |
-| `graphite_target` | The target, where the graphite data should be sent to, e.g. `tcp://localhost:3002` or `file:///tmp/metrics.log` |
-| `log_level`       | The log level (debug, info, notice, warning, error, critical) |
+| Key                  | Description                                              |
+|----------------------|----------------------------------------------------------|
+| `udp_address`        | The address to listen for UDP packages                   |
+| `graphite_target`    | The target, where the graphite data should be sent to, e.g. `tcp://localhost:3002` or `file:///tmp/metrics.log` |
+| `monitoring_enabled` | Whether Pirate should generate own monitoring metrics (received metrics, dropped metrics, etc.) |
+| `monitoring_path`    | Graphite path to use for monitoring metrics, only used when monitoring enabled (may contain [placeholders](#placeholders)) |
+| `gzip`               | Whether to use GZIP compressed messages |
+| `log_level`          | The log level (debug, info, notice, warning, error, critical) |
 
 ### Projects
 
 Every project has its own custom sub-section within the configuration file under the key `projects.PROJECT_ID`,
 where `PROJECT_ID` is your own identifier, which is used from the message header to determine the target project
 
-The sub-section then has the following keys:
+The projects sub-section then has the following keys:
 
 | Key               | Description                                              |
 |-------------------|----------------------------------------------------------|
 | `graphite_path`   | The path each incoming metric is written to. It might contain placeholders (see [placeholders](#placeholders) for more information) |
 | `attributes`      | Custom attributes, which can be used within [placeholders](#placeholders) |
 | `metrics`         | Allowed metric definitions with boundary check           |
+
+### Attributes
+
+Every project may have custom attribute definitions under the key `projects.PROJECT_ID.attributes.ATTRIBUTE_ID`,
+where `ATTRIBUTE_ID` is your own identifier, which is used from the message header (analogous to the `project` attribute).
+
+The value of every attribute is just a regular expression, which is tested on incoming message headers. If at least one
+of the attribute's expressions does not match, the whole message will be dropped.
+
+### Metrics
+
+Every project may have one or more metric definitions under the key `projects.PROJECT_ID.metrics.METRIC_ID`,
+where `METRIC_ID` is your own metric identifier, which equals the metric name from the message body.
+
+This definition includes a min and max value, which are used for boundary validation.
+Metrics, which are out of the configured boundary, will be dropped.
+Optionally the Graphite Path of the project can be overridden for single metrics.
+
+The metrics sub-section supports the following options:
+
+| Key             | Description                                              |
+|-----------------|----------------------------------------------------------|
+| `graphite_path` | The Graphite path, which is used for this metric. This is optional: if left out, the `graphite_path` from the project is used |
+| `min`           | The minimum allowed value (float32) |
+| `max`           | The maximum allowed value (float32) |
 
 ### Placeholders
 
@@ -106,14 +140,17 @@ would result in the path `games.awesome_game.client.ios.1_3_37.fps`
 
 If one of the attributes is missing, the metrics won't be processed any further
 
-### Full Example
+### Full Config Example
 ```yaml
 udp_address: 0.0.0.0:33333
 graphite_target: tcp://127.0.0.1:3002
+monitoring_enabled: true
+monitoring_path: games.awesome_game.pirate.{metric.name}
+gzip: true
 log_level: debug # debug mode is very verbose and should only be used for - well - debugging purpose :)
 projects:
-  my_first_project:
-    graphite_path: games.awesome_game.client.{attr.platform}.{attr.version}.{metric.name}
+  awesome_client:
+    graphite_path: AVG.games.awesome_game.client.{attr.platform}.{attr.version}.{metric.name}
     attributes:
       platform: ^(ios|android)$
       version: ^[0-9]+\.[0-9]+$
@@ -127,7 +164,11 @@ projects:
       startup_time:
         min: 0
         max: 90
-  another_project:
+      errors:
+        graphite_path: SUM.games.awesome_game.client.{attr.platform}.{attr.version}.{metric.name}
+        min: 0
+        max: 1000
+  awesome_backend:
     graphite_path: servers.some_project.{attr.hostname}.{metric.name}
     attributes:
       hostname: ^[0-9a-f]{12}$
