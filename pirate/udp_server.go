@@ -13,16 +13,17 @@ const (
 type UdpServer struct {
 	address *net.UDPAddr
 	logger  *logging.Logger
+	stats   *MonitoringStats
 	chUdp   chan<- []byte
 }
 
-func NewUdpServer(address string, logger *logging.Logger, chUdp chan<- []byte) (*UdpServer, error) {
+func NewUdpServer(address string, logger *logging.Logger, stats *MonitoringStats, chUdp chan<- []byte) (*UdpServer, error) {
 	parsedAddr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to resolve UDP address %s: %s", address, err)
 	}
 
-	return &UdpServer{parsedAddr, logger, chUdp}, nil
+	return &UdpServer{parsedAddr, logger, stats, chUdp}, nil
 }
 
 func (s *UdpServer) Run() error {
@@ -41,6 +42,8 @@ func (s *UdpServer) Run() error {
 		}
 
 		s.logger.Debugf("[UDP] Received %d bytes", n)
+		s.stats.IncBytesIn(n)
+		s.stats.IncUdpReceived()
 
 		packet := make([]byte, n)
 		copy(packet, buf)
@@ -49,6 +52,7 @@ func (s *UdpServer) Run() error {
 		case s.chUdp <- packet:
 		default:
 			s.logger.Debug("[UDP] Buffer is full, packet got dropped")
+			s.stats.IncUdpDropped()
 		}
 	}
 }

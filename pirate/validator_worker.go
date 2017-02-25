@@ -12,12 +12,13 @@ import (
 type validatorWorker struct {
 	cfg    *Config
 	logger *logging.Logger
+	stats  *MonitoringStats
 	chIn   <-chan *Message
 	chOut  chan<- *Message
 }
 
-func NewValidatorWorker(cfg *Config, logger *logging.Logger, chIn <-chan *Message, chOut chan<- *Message) *validatorWorker {
-	return &validatorWorker{cfg, logger, chIn, chOut}
+func NewValidatorWorker(cfg *Config, logger *logging.Logger, stats *MonitoringStats, chIn <-chan *Message, chOut chan<- *Message) *validatorWorker {
+	return &validatorWorker{cfg, logger, stats, chIn, chOut}
 }
 
 func (w *validatorWorker) Run(concurrency int) {
@@ -35,12 +36,21 @@ func (w *validatorWorker) Run(concurrency int) {
 func (w *validatorWorker) run(wg sync.WaitGroup) {
 	for msg := range w.chIn {
 		metricsBefore := len(msg.Metrics)
+
+		w.stats.IncMsgReceived()
+		w.stats.IncMetricsReceived(metricsBefore)
+
 		if err := w.validateMsg(msg); err != nil {
-			w.logger.Warningf("[Validator] Validation failed: %s", err)
+			w.logger.Noticef("[Validator] Validation failed: %s", err)
+			w.stats.IncMsgDropped()
+			w.stats.IncMetricsDropped(metricsBefore)
+
 			continue
 		}
 
 		w.logger.Debugf("[Validator] Validation succeeded with %d of %d metrics", len(msg.Metrics), metricsBefore)
+		w.stats.IncMetricsDropped(metricsBefore - len(msg.Metrics))
+
 		w.chOut <- msg
 	}
 

@@ -19,6 +19,10 @@ func NewCtx(attr map[string][]byte, metric *Metric) *Context {
 	return &Context{attr, metric}
 }
 
+func NewMonitoringCtx(metric *Metric) *Context {
+	return NewCtx(make(map[string][]byte), metric)
+}
+
 type pathTemplate struct {
 	parts []node
 }

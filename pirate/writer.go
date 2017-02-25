@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func NewWriter(target string, logger *logging.Logger) (MetricWriter, error) {
+func NewWriter(target string, logger *logging.Logger, stats *MonitoringStats) (MetricWriter, error) {
 	parsed, err := url.Parse(target)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create Graphite writer: %s", err)
@@ -22,15 +22,15 @@ func NewWriter(target string, logger *logging.Logger) (MetricWriter, error) {
 
 	switch parsed.Scheme {
 	case "file":
-		return NewFileWriter(parsed.Path, logger)
+		return NewFileWriter(parsed.Path, logger, stats)
 	case "tcp":
-		return NewTcpWriter(parsed.Host, logger)
+		return NewTcpWriter(parsed.Host, logger, stats)
 	default:
 		return nil, fmt.Errorf(`Unsupported graphite target (scheme must be "tcp" or "file"): %s`, parsed.Scheme)
 	}
 }
 
-func NewFileWriter(filename string, logger *logging.Logger) (*wrappedWriter, error) {
+func NewFileWriter(filename string, logger *logging.Logger, stats *MonitoringStats) (*wrappedWriter, error) {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open graphite target file %s: %s", filename, err)
@@ -61,16 +61,16 @@ func NewFileWriter(filename string, logger *logging.Logger) (*wrappedWriter, err
 		}
 	}()
 
-	return &wrappedWriter{writer: file, reopen: reopen, logger: logger}, nil
+	return &wrappedWriter{writer: file, reopen: reopen, logger: logger, stats: stats}, nil
 }
 
-func NewTcpWriter(addr string, logger *logging.Logger) (*wrappedWriter, error) {
+func NewTcpWriter(addr string, logger *logging.Logger, stats *MonitoringStats) (*wrappedWriter, error) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, fmt.Errorf("TCP error: %s", err)
 	}
 
-	writer := &wrappedWriter{writer: conn, logger: logger}
+	writer := &wrappedWriter{writer: conn, logger: logger, stats: stats}
 	writer.reopen = func() error {
 		conn.Close()
 
@@ -104,6 +104,7 @@ type wrappedWriter struct {
 	reopen func() error
 	logger *logging.Logger
 	mu     sync.Mutex
+	stats  *MonitoringStats
 }
 
 func (w *wrappedWriter) Write(m *Metric) error {
@@ -131,6 +132,9 @@ func (w *wrappedWriter) WriteRaw(path []byte, value []byte, timestamp []byte) er
 			}
 		}
 	}
+
+	w.stats.IncMetricsWritten()
+	w.stats.IncBytesOut(len(buf))
 
 	return nil
 }

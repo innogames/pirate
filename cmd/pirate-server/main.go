@@ -27,12 +27,14 @@ func main() {
 	chValidMsg := make(chan *pirate.Message, 100)
 	chMetric := make(chan *pirate.Metric, 1000)
 
-	server, err := pirate.NewUdpServer(cfg.UdpAddress, logger, chUdp)
+	stats := pirate.NewMonitoringStats()
+
+	server, err := pirate.NewUdpServer(cfg.UdpAddress, logger, stats, chUdp)
 	if err != nil {
 		fail("Failed to initialize server: %s\n", err)
 	}
 
-	writer, err := pirate.NewWriter(cfg.GraphiteTarget, logger)
+	writer, err := pirate.NewWriter(cfg.GraphiteTarget, logger, stats)
 	if err != nil {
 		fail("Failed to initialize writer: %s", err)
 	}
@@ -46,9 +48,10 @@ func main() {
 
 	go pirate.NewCompressionWorker(decompressor, logger, chUdp, chUdpDecomp).Run(numCpus)
 	go pirate.NewParserWorker(logger, chUdpDecomp, chMsg).Run(numCpus)
-	go pirate.NewValidatorWorker(cfg, logger, chMsg, chValidMsg).Run(numCpus)
+	go pirate.NewValidatorWorker(cfg, logger, stats, chMsg, chValidMsg).Run(numCpus)
 	go pirate.NewMetricWorker(cfg, logger, chValidMsg, chMetric).Run(numCpus)
 	go pirate.NewWriterWorker(writer, logger, chMetric).Run(1)
+	go pirate.NewMonitoringWorker(cfg, logger, chMetric, stats).Run()
 
 	if err := server.Run(); err != nil {
 		fail("UDP Server error: %s", err)
