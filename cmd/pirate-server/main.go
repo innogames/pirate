@@ -29,7 +29,7 @@ func main() {
 
 	stats := pirate.NewMonitoringStats()
 
-	server, err := pirate.NewUdpServer(cfg.UdpAddress, logger, stats, chUdp)
+	server, err := pirate.NewUdpServer(cfg.UdpAddress, cfg.PerIpRateLimit, logger, stats, chUdp)
 	if err != nil {
 		fail("Failed to initialize server: %s\n", err)
 	}

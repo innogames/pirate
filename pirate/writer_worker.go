@@ -12,7 +12,12 @@ type writerWorker struct {
 }
 
 func NewWriterWorker(writer MetricWriter, logger *logging.Logger, chMetric chan *Metric) *writerWorker {
-	return &writerWorker{writer, logger, chMetric}
+	worker := new(writerWorker)
+	worker.writer = writer
+	worker.logger = logger
+	worker.chMetric = chMetric
+
+	return worker
 }
 
 func (w *writerWorker) Run(concurrency int) {

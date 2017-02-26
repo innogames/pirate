@@ -7,25 +7,27 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"regexp"
+	"time"
 )
 
 type Config struct {
-	UdpAddress         string        `yaml:"udp_address"`
-	GraphiteTarget     string        `yaml:"graphite_target"`
-	Gzip               bool          `yaml:"gzip"`
-	LogLevelStr        string        `yaml:"log_level"`
-	LogLevel           logging.Level `yaml:"-"`
-	MonitoringEnabled  bool          `yaml:"monitoring_enabled"`
-	MonitoringPattern  string        `yaml:"monitoring_path"`
-	MonitoringTemplate *pathTemplate `yaml:"-"`
+	UdpAddress         string           `yaml:"udp_address"`
+	GraphiteTarget     string           `yaml:"graphite_target"`
+	PerIpRateLimit     *RateLimitConfig `yaml:"per_ip_ratelimit"`
+	Gzip               bool             `yaml:"gzip"`
+	LogLevelStr        string           `yaml:"log_level"`
+	LogLevel           logging.Level    `yaml:"-"`
+	MonitoringEnabled  bool             `yaml:"monitoring_enabled"`
+	MonitoringPattern  string           `yaml:"monitoring_path"`
+	MonitoringTemplate *pathTemplate    `yaml:"-"`
 	Projects           map[string]*ProjectConfig
 }
 
 type ProjectConfig struct {
-	GraphitePattern  string        `yaml:"graphite_path"`
-	GraphiteTemplate *pathTemplate `yaml:"-"`
-	Metrics          map[string]*MetricConfig
-	Attributes       map[string]string
+	GraphitePattern  string                    `yaml:"graphite_path"`
+	GraphiteTemplate *pathTemplate             `yaml:"-"`
+	Metrics          map[string]*MetricConfig  `yaml:"metrics"`
+	Attributes       map[string]string         `yaml:"attributes"`
 	AttributesRegex  map[string]*regexp.Regexp `yaml:"-"`
 }
 
@@ -34,6 +36,11 @@ type MetricConfig struct {
 	GraphiteTemplate *pathTemplate `yaml:"-"`
 	Min              float64       `yaml:"min"`
 	Max              float64       `yaml:"max"`
+}
+
+type RateLimitConfig struct {
+	Amount   int           `yaml:"amount"`
+	Interval time.Duration `yaml:"interval"`
 }
 
 func LoadConfig(filename string) (*Config, error) {
@@ -45,6 +52,10 @@ func LoadConfig(filename string) (*Config, error) {
 	cfg := &Config{}
 	if err := yaml.Unmarshal(content, cfg); err != nil {
 		return nil, fmt.Errorf("Failed to parse configuration file: %s", err)
+	}
+
+	if cfg.PerIpRateLimit == nil {
+		cfg.PerIpRateLimit = &RateLimitConfig{100, 1 * time.Minute}
 	}
 
 	// initialize monitoring template
@@ -97,15 +108,16 @@ func LoadConfig(filename string) (*Config, error) {
 }
 
 func (cfg *Config) Log(logger *logging.Logger) {
-	logger.Debugf("[Config] UDP Address: %s", cfg.UdpAddress)
-	logger.Debugf("[Config] Graphite Target: %s", cfg.GraphiteTarget)
-	logger.Debugf("[Config] Projects:")
+	logger.Infof("[Config] UDP Address: %s", cfg.UdpAddress)
+	logger.Infof("[Config] Graphite Target: %s", cfg.GraphiteTarget)
+	logger.Infof("[Config] UDP Rate Limit: %d metrics per %s per IP", cfg.PerIpRateLimit.Amount, cfg.PerIpRateLimit.Interval)
+	logger.Infof("[Config] Projects:")
 
 	for pid, project := range cfg.Projects {
-		logger.Debugf("[Config]   - %s", pid)
+		logger.Infof("[Config]   - %s", pid)
 
 		for mid, metric := range project.Metrics {
-			logger.Debugf("[Config]     - %s [min=%.0f max=%.0f path=%s]", mid, metric.Min, metric.Max, metric.GraphitePattern)
+			logger.Infof("[Config]     - %s [min=%.0f max=%.0f path=%s]", mid, metric.Min, metric.Max, metric.GraphitePattern)
 		}
 	}
 }

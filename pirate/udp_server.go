@@ -14,16 +14,19 @@ type UdpServer struct {
 	address *net.UDPAddr
 	logger  *logging.Logger
 	stats   *MonitoringStats
+	limiter *IpLimiter
 	chUdp   chan<- []byte
 }
 
-func NewUdpServer(address string, logger *logging.Logger, stats *MonitoringStats, chUdp chan<- []byte) (*UdpServer, error) {
+func NewUdpServer(address string, ratelimit *RateLimitConfig, logger *logging.Logger, stats *MonitoringStats, chUdp chan<- []byte) (*UdpServer, error) {
 	parsedAddr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to resolve UDP address %s: %s", address, err)
 	}
 
-	return &UdpServer{parsedAddr, logger, stats, chUdp}, nil
+	limiter := NewIpLimiter(ratelimit.Amount, ratelimit.Interval)
+
+	return &UdpServer{parsedAddr, logger, stats, limiter, chUdp}, nil
 }
 
 func (s *UdpServer) Run() error {
@@ -35,7 +38,8 @@ func (s *UdpServer) Run() error {
 
 	buf := make([]byte, UdpBufferSize)
 	for {
-		n, _, err := conn.ReadFromUDP(buf)
+		// accept packet
+		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil {
 			s.logger.Infof("[UDP] Failed to read packet: %s", err)
 			continue
@@ -45,6 +49,15 @@ func (s *UdpServer) Run() error {
 		s.stats.IncBytesIn(n)
 		s.stats.IncUdpReceived()
 
+		// check rate limit
+		if !s.limiter.Allow(addr.IP) {
+			s.logger.Infof("[UDP] Rate Limit reached for address: %s", addr.IP.String())
+			s.stats.IncUdpDropped()
+
+			continue
+		}
+
+		// forward packet
 		packet := make([]byte, n)
 		copy(packet, buf)
 
