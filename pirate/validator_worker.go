@@ -128,7 +128,7 @@ func (w *validatorWorker) validateMetric(cfg *ProjectConfig, metric *Metric) err
 
 	nowUnix := time.Now().Unix()
 	if ts > nowUnix {
-		return errors.New("future timestamp")
+		return fmt.Errorf("future timestamp (%d seconds ahead)", ts-nowUnix)
 	}
 
 	if ts < nowUnix-int64(3*time.Hour) { // TODO: make max age configurable
