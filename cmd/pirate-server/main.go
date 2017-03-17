@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/innogames/pirate/pirate"
 	"github.com/op/go-logging"
-	"gitlab.innogames.de/foe-tools/pirate/pirate"
 	"os"
 	"runtime"
 )
