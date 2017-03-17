@@ -127,7 +127,7 @@ func (w *validatorWorker) validateMetric(cfg *ProjectConfig, metric *Metric) err
 	}
 
 	nowUnix := time.Now().Unix()
-	if ts > nowUnix {
+	if ts > nowUnix+int64(10*time.Second) { // TODO: make max future time configurable
 		return fmt.Errorf("future timestamp (%d seconds ahead)", ts-nowUnix)
 	}
 
