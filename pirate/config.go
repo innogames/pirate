@@ -39,8 +39,24 @@ type MetricConfig struct {
 }
 
 type RateLimitConfig struct {
+	Enabled  bool          `yaml:"enabled"`
 	Amount   int           `yaml:"amount"`
 	Interval time.Duration `yaml:"interval"`
+}
+
+var DefaultConfig = Config{
+	UdpAddress:        "0.0.0.0:33333",
+	GraphiteTarget:    "tcp://127.0.0.1:3002",
+	MonitoringEnabled: true,
+	MonitoringPattern: "pirate.{metric.name}",
+	Gzip:              true,
+	LogLevelStr:       "info",
+	PerIpRateLimit: &RateLimitConfig{
+		Enabled:  true,
+		Amount:   100,
+		Interval: 1 * time.Minute,
+	},
+	Projects: make(map[string]*ProjectConfig),
 }
 
 func LoadConfig(filename string) (*Config, error) {
@@ -49,13 +65,9 @@ func LoadConfig(filename string) (*Config, error) {
 		return nil, fmt.Errorf("Failed to load config file from %s: %s", filename, err)
 	}
 
-	cfg := &Config{}
+	cfg := &DefaultConfig
 	if err := yaml.Unmarshal(content, cfg); err != nil {
 		return nil, fmt.Errorf("Failed to parse configuration file: %s", err)
-	}
-
-	if cfg.PerIpRateLimit == nil {
-		cfg.PerIpRateLimit = &RateLimitConfig{100, 1 * time.Minute}
 	}
 
 	// initialize monitoring template
