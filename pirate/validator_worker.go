@@ -126,13 +126,13 @@ func (w *validatorWorker) validateMetric(cfg *ProjectConfig, metric *Metric) err
 		return errors.New("timestamp must be int64-compatible")
 	}
 
-	nowUnix := time.Now().Unix()
-	if ts > nowUnix+int64(10*time.Second) { // TODO: make max future time configurable
-		return fmt.Errorf("future timestamp (%d seconds ahead)", ts-nowUnix)
+	metricTime := time.Unix(ts, 0)
+	if time.Now().Add(10 * time.Second).Truncate(time.Second).Before(metricTime) { // TODO: make max future time configurable
+		return fmt.Errorf("future timestamp (%s ahead)", metricTime.Sub(time.Now()))
 	}
 
-	if ts < nowUnix-int64(3*time.Hour) { // TODO: make max age configurable
-		return errors.New("timestamp too old")
+	if time.Now().Add(-3 * time.Hour).Truncate(time.Second).After(metricTime) { // TODO: make max age configurable
+		return fmt.Errorf("timestamp too old (%s behind)", metricTime.Truncate(time.Second).Sub(time.Now()))
 	}
 
 	// validate value
