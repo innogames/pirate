@@ -1,23 +1,40 @@
 udp_address: 0.0.0.0:33333
 graphite_target: tcp://127.0.0.1:3002
 monitoring_enabled: true
-monitoring_path: servers.pirate_foe.software.pirate.{metric.name}
+monitoring_path: games.awesome_game.pirate.{metric.name}
 gzip: true
-log_level: info
+log_level: debug # debug mode is very verbose and should only be used for - well - debugging purpose :)
+per_ip_ratelimit:
+  amount: 20
+  interval: 1m
 projects:
-  foe_mobile:
-    graphite_path: AVG.games.foe.client.{attr.market}.{attr.platform}.{attr.version}.{metric.name}
+  awesome_client:
+    graphite_path: AVG.games.awesome_game.client.{attr.platform}.{attr.version}.{metric.name}
     attributes:
-      market: ^(none|[a-z]{2})$
-      platform: ^(ios|and(_(google|amazon|samsung))?)$
-      version: ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))?$
+      platform: ^(ios|android)$
+      version: ^[0-9]+\.[0-9]+$
     metrics:
-      fps:
+      frames_per_second:
         min: 0
-        max: 70
+        max: 60
       memory_usage:
         min: 0
         max: 2147483648
       startup_time:
         min: 0
-        max: 120
+        max: 90
+      errors:
+        graphite_path: SUM.games.awesome_game.client.{attr.platform}.{attr.version}.{metric.name}
+        min: 0
+        max: 1000
+  awesome_backend:
+    graphite_path: servers.some_project.{attr.hostname}.{metric.name}
+    attributes:
+      hostname: ^[0-9a-f]{12}$
+    metrics:
+      requests_per_second:
+        min: 0
+        max: 100000
+      response_time:
+        min: 0
+        max: 100

@@ -91,6 +91,7 @@ All metrics which passed this validation will be processed and sent to Grafsy
 | `monitoring_path`    | Graphite path to use for monitoring metrics, only used when monitoring enabled (may contain [placeholders](#placeholders)) |
 | `gzip`               | Whether to use GZIP compressed messages |
 | `log_level`          | The log level (debug, info, notice, warning, error, critical) |
+| `per_ip_ratelimit`   | Rate limit per IP, allows up to `amount` UDP messages per `interval` from the same IP address |
 
 ### Projects
 
@@ -163,6 +164,9 @@ monitoring_enabled: true
 monitoring_path: games.awesome_game.pirate.{metric.name}
 gzip: true
 log_level: debug # debug mode is very verbose and should only be used for - well - debugging purpose :)
+per_ip_ratelimit:
+  amount: 20
+  interval: 1m
 projects:
   awesome_client:
     graphite_path: AVG.games.awesome_game.client.{attr.platform}.{attr.version}.{metric.name}
