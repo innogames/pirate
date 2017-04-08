@@ -1,5 +1,7 @@
 # Pirate
 
+![Pirate Logo](doc/pirate-logo.png)
+
 ## What is Pirate?
 
 Pirate is a gateway, written in go, which accepts client-side metrics via UDP and makes them available to [grafsy](https://github.com/leoleovich/grafsy).
