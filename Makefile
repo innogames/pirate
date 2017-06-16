@@ -1,24 +1,31 @@
-.PHONY: all clean
+SERVER_BIN := bin/pirate-server
+SERVER_SRC := cmd/pirate-server/main.go $(shell find pirate -type f -name '*.go')
+CONFIG     := config.yml
 
-all: server
+.PHONY: all test bench clean
 
-server:
-	go build -o bin/pirate-server cmd/pirate-server/main.go
+all: $(SERVER_BIN)
 
-server\:linux: init
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -ldflags '-s' -o bin/pirate-server cmd/pirate-server/main.go
+$(SERVER_BIN): $(SERVER_SRC)
+	@echo "[compile] $@"
+	@go build -o $@ $<
 
-server\:run: server init
-	./bin/pirate-server -config config.yml
+run: $(SERVER_BIN) $(CONFIG)
+	@echo "[run] server"
+	@$(SERVER_BIN) -config $(CONFIG)
 
-init:
-	@if ! [ -a config.yml ]; then \
-		echo "Copying example-config.yml to config.yml"; \
-		cp example-config.yml config.yml; \
-	fi
+$(CONFIG):
+	@echo "[init] config.yml"
+	@cp example-config.yml $@
 
 test:
-	go test ./pirate/...
+	@echo "[test] running tests"
+	@go test ./pirate/...
 
 bench:
-    go test ./pirate/... -bench=.
+	@echo "[test] running benchmarks"
+	@go test ./pirate/... -bench=.
+
+clean:
+	@echo "[clean] cleaning binaries"
+	@rm -rf $(dir $(SERVER_BIN))
