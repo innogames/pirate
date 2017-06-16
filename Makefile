@@ -1,8 +1,9 @@
 SERVER_BIN := bin/pirate-server
 SERVER_SRC := cmd/pirate-server/main.go $(shell find pirate -type f -name '*.go')
 CONFIG     := config.yml
+DOCKERFILE := Dockerfile
 
-.PHONY: all test bench clean
+.PHONY: all run test bench docker clean
 
 all: $(SERVER_BIN)
 
@@ -25,6 +26,10 @@ test:
 bench:
 	@echo "[test] running benchmarks"
 	@go test ./pirate/... -bench=.
+
+docker: $(CONFIG)
+	@echo "[build] docker"
+	@docker build -t innogames/pirate:latest .
 
 clean:
 	@echo "[clean] cleaning binaries"
