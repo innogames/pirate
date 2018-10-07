@@ -32,7 +32,7 @@ func NewUdpServer(address string, ratelimit *RateLimitConfig, logger *logging.Lo
 func (s *UdpServer) Run() error {
 	conn, err := net.ListenUDP("udp", s.address)
 	if err != nil {
-		return fmt.Errorf("Unable to start UDP server on %s: %s", *s.address, err)
+		return fmt.Errorf("Unable to start UDP server on %s: %s", s.address.String(), err)
 	}
 	defer conn.Close()
 
