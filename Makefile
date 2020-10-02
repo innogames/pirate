@@ -22,12 +22,12 @@ $(CONFIG):
 .PHONY: test
 test:
 	@echo "+ $@"
-	go test ./pirate/...
+	go test -count 1 github.com/innogames/pirate/...
 
 .PHONY: bench
 bench:
 	@echo "+ $@"
-	go test ./pirate/... -bench=.
+	go test -count 1 github.com/innogames/pirate/... -bench=.
 
 .PHONY: docker
 docker: $(CONFIG)
