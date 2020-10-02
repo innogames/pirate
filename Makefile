@@ -7,34 +7,34 @@ DOCKERFILE := Dockerfile
 all: $(SERVER_BIN)
 
 $(SERVER_BIN): $(SERVER_SRC)
-	@echo "[compile] $@"
-	@go build -o $@ $<
+	@echo "+ $@"
+	go build -o $@ $<
 
 .PHONY: run
 run: $(SERVER_BIN) $(CONFIG)
-	@echo "[run] server"
-	@$(SERVER_BIN) -config $(CONFIG)
+	@echo "+ $@"
+	$(SERVER_BIN) -config $(CONFIG)
 
 $(CONFIG):
-	@echo "[init] config.yml"
-	@cp example-config.yml $@
+	@echo "+ $@"
+	cp example-config.yml $@
 
 .PHONY: test
 test:
-	@echo "[test] running tests"
-	@go test ./pirate/...
+	@echo "+ $@"
+	go test ./pirate/...
 
 .PHONY: bench
 bench:
-	@echo "[test] running benchmarks"
-	@go test ./pirate/... -bench=.
+	@echo "+ $@"
+	go test ./pirate/... -bench=.
 
 .PHONY: docker
 docker: $(CONFIG)
-	@echo "[build] docker"
-	@docker build -t innogames/pirate:latest .
+	@echo "+ $@"
+	docker build -t innogames/pirate:latest .
 
 .PHONY: clean
 clean:
-	@echo "[clean] cleaning binaries"
-	@rm -rf $(dir $(SERVER_BIN))
+	@echo "+ $@"
+	rm -rf $(dir $(SERVER_BIN))
