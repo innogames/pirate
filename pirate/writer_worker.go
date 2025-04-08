@@ -21,7 +21,7 @@ func NewWriterWorker(writer MetricWriter, logger *logging.Logger, chMetric chan 
 }
 
 func (w *writerWorker) Run(concurrency int) {
-	var wg sync.WaitGroup
+	wg := &sync.WaitGroup{}
 
 	w.logger.Infof("[Writer] Starting %d writer workers", concurrency)
 	for i := 0; i < concurrency; i++ {
@@ -32,7 +32,7 @@ func (w *writerWorker) Run(concurrency int) {
 	wg.Wait()
 }
 
-func (w *writerWorker) run(wg sync.WaitGroup) {
+func (w *writerWorker) run(wg *sync.WaitGroup) {
 	for metric := range w.chMetric {
 		if err := w.writer.Write(metric); err != nil {
 			w.logger.Debugf("[Writer] Re-scheduling metric")
