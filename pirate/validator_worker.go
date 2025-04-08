@@ -22,7 +22,7 @@ func NewValidatorWorker(cfg *Config, logger *logging.Logger, stats *MonitoringSt
 }
 
 func (w *validatorWorker) Run(concurrency int) {
-	wg := sync.WaitGroup{}
+	wg := &sync.WaitGroup{}
 
 	w.logger.Infof("[Validator] Starting %d validation workers", concurrency)
 	for i := 0; i < concurrency; i++ {
@@ -33,7 +33,7 @@ func (w *validatorWorker) Run(concurrency int) {
 	wg.Wait()
 }
 
-func (w *validatorWorker) run(wg sync.WaitGroup) {
+func (w *validatorWorker) run(wg *sync.WaitGroup) {
 	for msg := range w.chIn {
 		metricsBefore := len(msg.Metrics)
 
@@ -128,11 +128,11 @@ func (w *validatorWorker) validateMetric(cfg *ProjectConfig, metric *Metric) err
 
 	metricTime := time.Unix(ts, 0)
 	if time.Now().Add(10 * time.Second).Truncate(time.Second).Before(metricTime) { // TODO: make max future time configurable
-		return fmt.Errorf("future timestamp (%s ahead)", metricTime.Sub(time.Now()))
+		return fmt.Errorf("future timestamp (%s ahead)", time.Until(metricTime))
 	}
 
 	if time.Now().Add(-3 * time.Hour).Truncate(time.Second).After(metricTime) { // TODO: make max age configurable
-		return fmt.Errorf("timestamp too old (%s behind)", metricTime.Truncate(time.Second).Sub(time.Now()))
+		return fmt.Errorf("timestamp too old (%s behind)", time.Until(metricTime.Truncate(time.Second)))
 	}
 
 	// validate value

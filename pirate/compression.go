@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"github.com/op/go-logging"
-	"io/ioutil"
+	"io"
 	"sync"
 )
 
@@ -32,7 +32,7 @@ func NewGzipDecompressor() DecompressFunc {
 		}
 		defer reader.Close()
 
-		return ioutil.ReadAll(reader)
+		return io.ReadAll(reader)
 	}
 }
 
@@ -41,7 +41,7 @@ func NewCompressionWorker(decomp DecompressFunc, logger *logging.Logger, chIn <-
 }
 
 func (w *compressionWorker) Run(concurrency int) {
-	var wg sync.WaitGroup
+	wg := &sync.WaitGroup{}
 
 	w.logger.Infof("[Decompressor] Starting %d decompression workers", concurrency)
 	for i := 0; i < concurrency; i++ {
@@ -52,7 +52,7 @@ func (w *compressionWorker) Run(concurrency int) {
 	wg.Wait()
 }
 
-func (w *compressionWorker) run(wg sync.WaitGroup) {
+func (w *compressionWorker) run(wg *sync.WaitGroup) {
 	for in := range w.chIn {
 		out, err := w.decompress(in)
 		if err != nil {

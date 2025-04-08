@@ -17,7 +17,7 @@ func NewMetricWorker(cfg *Config, logger *logging.Logger, chMsg <-chan *Message,
 }
 
 func (w *metricWorker) Run(concurrency int) {
-	var wg sync.WaitGroup
+	wg := &sync.WaitGroup{}
 
 	w.logger.Infof("[MetricResolver] Starting %d metric workers", concurrency)
 	for i := 0; i < concurrency; i++ {
@@ -28,7 +28,7 @@ func (w *metricWorker) Run(concurrency int) {
 	wg.Wait()
 }
 
-func (w *metricWorker) run(wg sync.WaitGroup) {
+func (w *metricWorker) run(wg *sync.WaitGroup) {
 	var projectCfg *ProjectConfig
 	var metricCfg *MetricConfig
 

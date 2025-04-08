@@ -99,7 +99,7 @@ type attrNode struct {
 func (node attrNode) Resolve(ctx *Context) ([]byte, error) {
 	if value, ok := ctx.attr[node.name]; ok {
 		if bytes.IndexByte(value, '.') != -1 {
-			value = bytes.Replace(value, []byte{'.'}, []byte{'_'}, -1)
+			value = bytes.ReplaceAll(value, []byte{'.'}, []byte{'_'})
 		}
 		return value, nil
 	}

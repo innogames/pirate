@@ -16,7 +16,7 @@ func NewParserWorker(logger *logging.Logger, chUdp <-chan []byte, chMsg chan<- *
 }
 
 func (w *ParserWorker) Run(concurrency int) {
-	wg := sync.WaitGroup{}
+	wg := &sync.WaitGroup{}
 
 	w.logger.Infof("[Parser] Starting %d parser workers", concurrency)
 	for i := 0; i < concurrency; i++ {
@@ -27,7 +27,7 @@ func (w *ParserWorker) Run(concurrency int) {
 	wg.Wait()
 }
 
-func (w *ParserWorker) run(wg sync.WaitGroup) {
+func (w *ParserWorker) run(wg *sync.WaitGroup) {
 	for udp := range w.chUdp {
 		msg := &Message{}
 

@@ -55,7 +55,7 @@ func main() {
 		buf.Write([]byte(*attr))
 		buf.WriteByte('\n')
 		for _, m := range metrics {
-			buf.WriteString(fmt.Sprintf("%s %f %d\n", m.Name, m.Value, m.Timestamp))
+			fmt.Fprintf(buf, "%s %f %d\n", m.Name, m.Value, m.Timestamp)
 		}
 
 		// compress buffer, if gzip enabled
@@ -76,7 +76,7 @@ func main() {
 			fail("Failed to send UDP package: %s", err)
 		}
 
-		time.Sleep(1*time.Second - (time.Now().Sub(startTime)))
+		time.Sleep(1*time.Second - (time.Since(startTime)))
 	}
 }
 

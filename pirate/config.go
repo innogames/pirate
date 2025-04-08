@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/op/go-logging"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"os"
 	"regexp"
 	"time"
 )
@@ -60,7 +60,7 @@ var DefaultConfig = Config{
 }
 
 func LoadConfig(filename string) (*Config, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to load config file from %s: %s", filename, err)
 	}
